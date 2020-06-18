@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 
 namespace Doggo.Models
 {
+    // Data Model
     public class Owner
     {
         public int Id { get; set; }
@@ -14,6 +15,5 @@ namespace Doggo.Models
         public int NeighborhoodId { get; set; }
         public Neighborhood Neighborhood { get; set; }
         public string Phone { get; set; }
-        public List<Dog> Dogs { get; set; }
     }
 }

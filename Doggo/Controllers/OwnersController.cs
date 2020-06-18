@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Doggo.Models;
+using Doggo.Models.ViewModels;
 using Doggo.Repositories;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -14,11 +15,15 @@ namespace Doggo.Controllers
     {
         private readonly OwnerRepository _ownerRepo;
         private readonly DogRepository _dogRepo;
+        private readonly WalkerRepository _walkerRepo;
+        private readonly NeighborhoodRepository _neighborhoodRepo;
 
         public OwnersController(IConfiguration config)
         {
             _ownerRepo = new OwnerRepository(config);
             _dogRepo = new DogRepository(config);
+            _walkerRepo = new WalkerRepository(config);
+            _neighborhoodRepo = new NeighborhoodRepository(config);
         }
 
         // GET: OwnersController
@@ -32,22 +37,32 @@ namespace Doggo.Controllers
         // GET: OwnersController/Details/5
         public ActionResult Details(int id)
         {
-            Owner owner = _ownerRepo.GetOwnerById(id);
+            ProfileViewModel vm = new ProfileViewModel();
+            vm.Owner = _ownerRepo.GetOwnerById(id);
 
-            if (owner == null)
+            if (vm.Owner == null)
             {
                 return NotFound();
             }
 
-            owner.Dogs = _dogRepo.GetDogsByOwnerId(id);
+            vm.Dogs = _dogRepo.GetDogsByOwnerId(id);
+            vm.Walkers = _walkerRepo.GetWalkersInNeighborhood(vm.Owner.NeighborhoodId);
 
-            return View(owner);
+            return View(vm);
         }
-
-        // GET: OwnersController/Create
+        
+        // GET: Owners/Create
         public ActionResult Create()
         {
-            return View();
+            List<Neighborhood> neighborhoods = _neighborhoodRepo.GetAll();
+
+            OwnerFormViewModel vm = new OwnerFormViewModel()
+            {
+                Owner = new Owner(),
+                Neighborhoods = neighborhoods
+            };
+
+            return View(vm);
         }
 
         // POST: OwnersController/Create
