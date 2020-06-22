@@ -1,10 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using Doggo.Models;
 using Doggo.Models.ViewModels;
 using Doggo.Repositories;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
@@ -50,13 +53,13 @@ namespace Doggo.Controllers
 
             return View(vm);
         }
-        
+
         // GET: Owners/Create
         public ActionResult Create()
         {
             List<Neighborhood> neighborhoods = _neighborhoodRepo.GetAll();
 
-            OwnerFormViewModel vm = new OwnerFormViewModel()
+          OwnerFormViewModel vm = new OwnerFormViewModel()
             {
                 Owner = new Owner(),
                 Neighborhoods = neighborhoods
@@ -86,9 +89,15 @@ namespace Doggo.Controllers
         // GET: Owners/Edit/5
         public ActionResult Edit(int id)
         {
-            Owner owner = _ownerRepo.GetOwnerById(id);
+            List<Neighborhood> neighborhoods = _neighborhoodRepo.GetAll();
 
-            return View(owner);
+            OwnerFormViewModel vm = new OwnerFormViewModel()
+            {
+                Owner = new Owner(),
+                Neighborhoods = neighborhoods
+            };
+
+            return View(vm);
         }
 
         // POST: OwnersController/Edit/5
@@ -104,7 +113,15 @@ namespace Doggo.Controllers
             }
             catch
             {
-                return View(owner);
+                List<Neighborhood> neighborhoods = _neighborhoodRepo.GetAll();
+
+                OwnerFormViewModel vm = new OwnerFormViewModel()
+                {
+                    Owner = owner,
+                    Neighborhoods = neighborhoods
+                };
+
+                return View(vm);
             }
         }
 
@@ -131,6 +148,38 @@ namespace Doggo.Controllers
                 // If something goes wrong, just keep the user on the same page so they can try again
                 return View(owner);
             }
+        }
+
+        public ActionResult Login()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        public async Task<ActionResult> Login(LoginViewModel viewModel)
+        {
+            Owner owner = _ownerRepo.GetOwnerByEmail(viewModel.Email);
+
+            if (owner == null)
+            {
+                return Unauthorized();
+            }
+
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.NameIdentifier, owner.Id.ToString()),
+                new Claim(ClaimTypes.Email, owner.Email),
+                new Claim(ClaimTypes.Role, "DogOwner"),
+            };
+
+            var claimsIdentity = new ClaimsIdentity(
+                claims, CookieAuthenticationDefaults.AuthenticationScheme);
+
+            await HttpContext.SignInAsync(
+                CookieAuthenticationDefaults.AuthenticationScheme,
+                new ClaimsPrincipal(claimsIdentity));
+
+            return RedirectToAction("Index", "Dogs");
         }
     }
 }

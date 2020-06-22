@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Doggo.Utils
 {
-    public class ReaderHelpers
+    public class SQLHelpers
     {
         public static string GetNullableString(SqlDataReader reader, string columnName)
         {
@@ -18,6 +18,16 @@ namespace Doggo.Utils
             }
 
             return reader.GetString(ordinal);
+        }
+
+        public static object GetNullableParam(object value)
+        {
+            if (value == null)
+            {
+                return DBNull.Value;
+            }
+
+            return value;
         }
     }
 }
